@@ -1,5 +1,6 @@
 <template>
     <div class="flex">
+        <span class="error" v-if="!hidden">Connection failed</span>
         <button @click="connection">Connection to Time API</button>
         <p>Date and time : {{date}} </p>
         <p>Time : {{temps}} </p>
@@ -13,36 +14,29 @@
         data: () =>{
             return {
                 date: 0,
-                temps: 0
+                temps: 0,
+                hidden: true
             }
         },
         methods: {
             connection(){
-                var cookie = this.getCookie("accessToken");
+                var accessToken = this.$store.state.token.accessToken;
                 var config = {
-                    headers: { Authorization: `Bearer ${cookie}` }
+                    headers: { Authorization: `Bearer ${accessToken}` }
                 };
-                axios.get("https://teststag.azurewebsites.net/Time",config).then(response => {
-                    if (response.status === 200){
-                        this.date = response.data.dateEtHeure;
-                        this.temps = response.data.temps;
-                    }
-                });
-            },
-            getCookie(cname) {
-                var name = cname + "=";
-                var decodedCookie = decodeURIComponent(document.cookie);
-                var ca = decodedCookie.split(';');
-                for(var i = 0; i <ca.length; i++) {
-                    var c = ca[i];
-                    while (c.charAt(0) == ' ') {
-                        c = c.substring(1);
-                    }
-                    if (c.indexOf(name) == 0) {
-                        return c.substring(name.length, c.length);
-                    }
-                }
-                return "";
+                axios.get("https://teststag.azurewebsites.net/Time",config)
+                    .then(response => {
+                        if (response.status === 200){
+                            this.date = response.data.dateEtHeure;
+                            this.temps = new Date(response.data.temps);
+                            console.log(this.temps.getHours());
+                            this.temps = this.temps.getHours() + ":" + this.temps.getMinutes() + ":" + this.temps.getSeconds();
+                            this.hidden = true;
+                        }
+                    })
+                    .catch(() => {
+                        this.hidden = false;
+                    });
             }
         }
     }
